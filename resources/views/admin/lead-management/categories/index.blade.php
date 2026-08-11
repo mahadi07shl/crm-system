@@ -95,7 +95,7 @@
 
                                 <!-- Name (edit mode, hidden by default) -->
                                 <td class="px-5 py-3 hidden" colspan="3" data-edit="{{ $category->id }}">
-                                    <form action="{{ route('admin.leads.categories.update', $category) }}" method="POST"
+                                    <form action="{{ route('admin.categories.update', $category) }}" method="POST"
                                           class="flex items-center gap-2">
                                         @csrf
                                         @method('PUT')
@@ -133,7 +133,7 @@
                                             <span class="material-symbols-outlined" style="font-size: 18px;">edit</span>
                                         </button>
 
-                                        <form action="{{ route('admin.leads.categories.toggle-status', $category) }}" method="POST">
+                                        <form action="{{ route('admin.categories.toggle-status', $category) }}" method="POST">
                                             @csrf
                                             @method('PATCH')
                                             <button type="submit"
@@ -145,7 +145,7 @@
                                             </button>
                                         </form>
 
-                                        <form action="{{ route('admin.leads.categories.destroy', $category) }}" method="POST"
+                                        <form action="{{ route('admin.categories.destroy', $category) }}" method="POST"
                                               onsubmit="return confirm('Delete category &quot;{{ $category->name }}&quot;? This cannot be undone.');">
                                             @csrf
                                             @method('DELETE')

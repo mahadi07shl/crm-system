@@ -18,7 +18,7 @@
                     Bulk Upload
                 </a>
             @endcan
-            <a href="{{ Route::has('admin.leads.create') ? route('admin.leads.create') : '#' }}"
+            <a href="{{ Route::has('leads.create') ? route('leads.create') : '#' }}"
                class="bg-primary-container hover:bg-[#e0650c] text-on-primary-container px-6 py-3 rounded-lg font-label-sm text-label-sm font-semibold flex items-center gap-2 transition-colors active:scale-95">
                 <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
                 Add Lead
@@ -96,11 +96,96 @@
                         <th class="py-4 px-6 font-label-sm text-label-sm text-secondary font-semibold text-right">Actions</th>
                     </tr>
                 </thead>
-               
+                <tbody class="divide-y divide-outline-variant/50">
+                    @forelse ($leads as $lead)
+                        <tr class="hover:bg-surface-container-low transition-colors group">
+                            <td class="py-4 px-6">
+                                <div class="font-label-sm text-label-sm text-on-surface font-semibold">{{ $lead->company_name }}</div>
+                                <div class="text-xs text-secondary mt-0.5">{{ $lead->contact_name }}</div>
+                                @if ($lead->email)
+                                    <div class="text-xs text-outline mt-0.5">{{ $lead->email }}</div>
+                                @endif
+                            </td>
+                            <td class="py-4 px-6">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-surface-container text-on-surface-variant">
+                                    {{ $lead->category->name ?? '—' }}
+                                </span>
+                            </td>
+                            <td class="py-4 px-6">
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium {{ $lead->status->badgeClasses() }}">
+                                    {{ $lead->status->label() }}
+                                </span>
+                            </td>
+                            <td class="py-4 px-6">
+                                @if ($lead->assignedUser)
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-7 h-7 rounded-full bg-surface-dim flex items-center justify-center text-primary text-xs font-semibold">
+                                            {{ Str::of($lead->assignedUser->name)->explode(' ')->map(fn($w) => Str::substr($w, 0, 1))->take(2)->implode('') }}
+                                        </div>
+                                        <span class="font-label-sm text-label-sm text-on-surface">{{ $lead->assignedUser->name }}</span>
+                                    </div>
+                                @else
+                                    <span class="text-xs text-outline italic">Unassigned</span>
+                                @endif
+                            </td>
+                            <td class="py-4 px-6">
+                                <span class="font-label-sm text-label-sm text-on-surface">
+                                    {{ $lead->follow_up_date?->format('d M, Y') ?? '—' }}
+                                </span>
+                            </td>
+                            <td class="py-4 px-6 text-right">
+                                <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    @if ($lead->editableBy(auth()->user()))
+                                        <a href="{{ Route::has('leads.edit') ? route('leads.edit', $lead) : '#' }}"
+                                           class="p-2 text-secondary hover:text-primary-container transition-colors rounded-full hover:bg-primary-container/10">
+                                            <span class="material-symbols-outlined text-[20px]">edit</span>
+                                        </a>
+                                    @endif
+
+                                    @if ($lead->assignableBy(auth()->user()))
+                                        <a href="{{ Route::has('leads.assign') ? route('leads.assign', $lead) : '#' }}"
+                                           class="p-2 text-secondary hover:text-primary-container transition-colors rounded-full hover:bg-primary-container/10">
+                                            <span class="material-symbols-outlined text-[20px]">person_add</span>
+                                        </a>
+                                    @endif
+
+                                    @if ($lead->deletableBy(auth()->user()))
+                                        <form action="{{ Route::has('leads.destroy') ? route('leads.destroy', $lead) : '#' }}"
+                                              method="POST" onsubmit="return confirm('Delete this lead? This cannot be undone.');">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" class="p-2 text-secondary hover:text-error transition-colors rounded-full hover:bg-error/10">
+                                                <span class="material-symbols-outlined text-[20px]">delete</span>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="py-14 px-6 text-center">
+                                <div class="flex flex-col items-center gap-2 text-secondary">
+                                    <span class="material-symbols-outlined" style="font-size: 32px;">person_search</span>
+                                    <span class="font-label-sm text-label-sm">No leads found.</span>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
             </table>
         </div>
 
-       
+        @if (method_exists($leads, 'links'))
+            <div class="mt-auto p-4 border-t border-outline-variant bg-surface-bright flex items-center justify-between">
+                <span class="font-label-sm text-label-sm text-secondary">
+                    Showing {{ $leads->firstItem() ?? 0 }} to {{ $leads->lastItem() ?? 0 }} of {{ $leads->total() }} leads
+                </span>
+                <div class="flex gap-1">
+                    {{ $leads->onEachSide(1)->links() }}
+                </div>
+            </div>
+        @endif
     </div>
 
 @endsection

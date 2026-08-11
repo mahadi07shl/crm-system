@@ -12,11 +12,15 @@ class LeadManagement extends Controller
 {
     public function index()
     {
-        return view('admin.lead-management.index');
+
+    $leads = Lead::get();
+        return view('admin.lead-management.index',compact('leads'));
     }
 
     public function create(){
-        return view('admin.lead-management.create');
+
+    $categories = Category::get();
+        return view('admin.lead-management.create',compact('categories'));
     }
 
     public function store(Request $request)
@@ -60,7 +64,7 @@ class LeadManagement extends Controller
         ]);
  
         return redirect()
-            ->route('admin.leads.categories.index')
+            ->route('admin.categories.index')
             ->with('success', "Category \"{$validated['name']}\" was added successfully.");
     }
 
