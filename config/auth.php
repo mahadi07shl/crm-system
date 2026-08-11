@@ -87,6 +87,10 @@ return [
             'driver' => 'eloquent',
             'model' => env('EMPLOYEE_MODEL', Employee::class),
         ],
+        // 'users' => [
+        //     'driver' => 'database',
+        //     'table' => 'users',
+        // ],
     ],
 
     /*
