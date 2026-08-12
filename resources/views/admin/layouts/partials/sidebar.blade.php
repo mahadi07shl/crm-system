@@ -47,7 +47,7 @@
     <span class="material-symbols-outlined text-[16px]">format_list_bulleted</span>
     All Leads
 </a>
-                <a href="{{ \Route::has('admin.leads.create') ? route('admin.leads.create') : '#' }}"
+                <a href="{{ \Route::has('') ? route('') : '#' }}"
                    class="flex items-center gap-2 px-3 py-2 rounded-lg font-label-sm text-xs transition-colors
                           {{ request()->routeIs('admin.leads.create')
                                 ? 'text-primary bg-primary-container/10'
@@ -153,9 +153,9 @@
         </a>
 
         <!-- Users -->
-        <a href="{{ \Route::has('users.index') ? route('users.index') : '#' }}"
+        <a href="{{ \Route::has('admin.staffs.index') ? route('admin.staffs.index') : '#' }}"
            class="flex items-center gap-3 px-4 py-3 rounded-r-full active:scale-95 duration-150 transition-colors
-                  {{ request()->routeIs('users.*')
+                  {{ request()->routeIs('staffs.*')
                         ? 'text-primary border-l-4 border-primary bg-primary-container/10'
                         : 'text-secondary hover:bg-surface-container-low' }}">
             <span class="material-symbols-outlined font-label-sm text-label-sm">group</span>

@@ -2,26 +2,23 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Models\LeadManagement as Lead;
 
-class User extends Authenticatable
+class StaffManagement extends Authenticatable
 {
     use HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
-     */
+
+    protected $table= "staff_management";
+  
+
     protected $fillable = [
         'name',
         'position',
-        'company_name',
         'email',
         'password',
         'role',                       // Admin | Supervisor | User — SRS section 2
@@ -34,28 +31,15 @@ class User extends Authenticatable
         'emergency_contact_phone',
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
-     */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password'          => 'hashed',
-        ];
-    }
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password'          => 'hashed',
+    ];
 
     /*
     |--------------------------------------------------------------------
@@ -84,17 +68,9 @@ class User extends Authenticatable
         return $query->where('status', 'active');
     }
 
-    /**
-     * Filter by role. Pass null / 'all' to skip filtering
-     * (used by the Staff Management index filter dropdown).
-     */
     public function scopeOfRole(Builder $query, ?string $role): Builder
     {
-        if (! $role || strtolower($role) === 'all') {
-            return $query;
-        }
-
-        return $query->where('role', $role);
+        return $role ? $query->where('role', $role) : $query;
     }
 
     /*
@@ -105,12 +81,12 @@ class User extends Authenticatable
 
     public function isAdmin(): bool
     {
-        return strtolower((string) $this->role) === 'admin';
+        return strtolower($this->role) === 'admin';
     }
 
     public function isSupervisor(): bool
     {
-        return strtolower((string) $this->role) === 'supervisor';
+        return strtolower($this->role) === 'supervisor';
     }
 
     /**
@@ -118,7 +94,7 @@ class User extends Authenticatable
      */
     public function isAdminOrSupervisor(): bool
     {
-        return in_array(strtolower((string) $this->role), ['admin', 'supervisor'], true);
+        return in_array(strtolower($this->role), ['admin', 'supervisor'], true);
     }
 
     /**

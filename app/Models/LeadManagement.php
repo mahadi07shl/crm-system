@@ -11,7 +11,8 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 class LeadManagement extends Model
 {
     use HasFactory;
-
+  
+   protected $table = 'leads';
     protected $fillable = [
         'company_name',
         'contact_name',

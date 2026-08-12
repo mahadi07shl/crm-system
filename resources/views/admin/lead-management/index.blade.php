@@ -11,8 +11,8 @@
             <p class="font-body-md text-body-md text-secondary mt-2">Track, assign, and follow up on every lead in the pipeline.</p>
         </div>
         <div class="flex items-center gap-3">
-            @can('bulkUpload', App\Models\Lead::class)
-                <a href="{{ Route::has('leads.bulk-upload') ? route('leads.bulk-upload') : '#' }}"
+            @can('bulkUpload', App\Models\LeadManagement::class)
+                <a href="{{ Route::has('admin.leads.bulk-upload') ? route('admin.leads.bulk-upload') : '#' }}"
                    class="flex items-center gap-2 px-4 py-2.5 border-2 border-primary-container text-primary-container rounded-lg hover:bg-primary-container/5 transition-colors font-label-sm text-label-sm font-semibold active:scale-95 duration-150">
                     <span class="material-symbols-outlined" style="font-size: 18px;">upload_file</span>
                     Bulk Upload
@@ -27,11 +27,13 @@
     </div>
 
     {{-- Flash messages --}}
-    @if (session('success'))
-        <div class="bg-[#dcfce7] text-[#166534] px-4 py-3 rounded-lg font-label-sm text-label-sm">
-            {{ session('success') }}
-        </div>
-    @endif
+    <div id="flash-message-container">
+        @if (session('success'))
+            <div class="bg-[#dcfce7] text-[#166534] px-4 py-3 rounded-lg font-label-sm text-label-sm">
+                {{ session('success') }}
+            </div>
+        @endif
+    </div>
 
     <!-- Filters -->
     <div class="bg-surface-container-lowest p-md rounded-xl border border-outline-variant flex flex-col lg:flex-row gap-4 items-stretch lg:items-center justify-between">
@@ -75,7 +77,7 @@
             </select>
 
             @if (request()->hasAny(['search', 'status', 'category_id', 'assigned_to']))
-                <a href="{{ route('leads.index') }}" class="flex items-center gap-1 text-secondary hover:text-error font-label-sm text-label-sm px-3 py-2 whitespace-nowrap">
+                <a href="{{ route('admin.leads.index') }}" class="flex items-center gap-1 text-secondary hover:text-error font-label-sm text-label-sm px-3 py-2 whitespace-nowrap">
                     <span class="material-symbols-outlined" style="font-size: 18px;">close</span> Clear
                 </a>
             @endif
@@ -98,7 +100,7 @@
                 </thead>
                 <tbody class="divide-y divide-outline-variant/50">
                     @forelse ($leads as $lead)
-                        <tr class="hover:bg-surface-container-low transition-colors group">
+                        <tr class="hover:bg-surface-container-low transition-colors group" data-lead-row="{{ $lead->id }}">
                             <td class="py-4 px-6">
                                 <div class="font-label-sm text-label-sm text-on-surface font-semibold">{{ $lead->company_name }}</div>
                                 <div class="text-xs text-secondary mt-0.5">{{ $lead->contact_name }}</div>
@@ -116,18 +118,28 @@
                                     {{ $lead->status->label() }}
                                 </span>
                             </td>
+
+                            <!-- Assigned To cell — updated live by JS after modal submit -->
                             <td class="py-4 px-6">
-                                @if ($lead->assignedUser)
-                                    <div class="flex items-center gap-2">
-                                        <div class="w-7 h-7 rounded-full bg-surface-dim flex items-center justify-center text-primary text-xs font-semibold">
-                                            {{ Str::of($lead->assignedUser->name)->explode(' ')->map(fn($w) => Str::substr($w, 0, 1))->take(2)->implode('') }}
-                                        </div>
-                                        <span class="font-label-sm text-label-sm text-on-surface">{{ $lead->assignedUser->name }}</span>
-                                    </div>
-                                @else
-                                    <span class="text-xs text-outline italic">Unassigned</span>
-                                @endif
+                                <div class="flex items-center gap-2" data-assigned-cell>
+                                    <button type="button"
+                                            onclick="openAssignModal({{ $lead->id }}, {{ Illuminate\Support\Js::from($lead->company_name) }}, {{ $lead->assigned_to ?? 'null' }})"
+                                            class="p-2 text-secondary hover:text-primary-container transition-colors rounded-full hover:bg-primary-container/10"
+                                            title="{{ $lead->assignedUser ? 'Reassign' : 'Assign' }}">
+                                        <span class="material-symbols-outlined text-[20px]" data-assign-icon>
+                                            {{ $lead->assignedUser ? 'sync_alt' : 'person_add' }}
+                                        </span>
+                                    </button>
+
+                                    <span class="font-label-sm text-label-sm text-on-surface" data-assigned-name style="{{ $lead->assignedUser ? '' : 'display:none' }}">
+                                        {{ $lead->assignedUser->name ?? '' }}
+                                    </span>
+                                    <span class="text-xs text-outline italic" data-unassigned-label style="{{ $lead->assignedUser ? 'display:none' : '' }}">
+                                        Unassigned
+                                    </span>
+                                </div>
                             </td>
+
                             <td class="py-4 px-6">
                                 <span class="font-label-sm text-label-sm text-on-surface">
                                     {{ $lead->follow_up_date?->format('d M, Y') ?? '—' }}
@@ -136,21 +148,14 @@
                             <td class="py-4 px-6 text-right">
                                 <div class="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                                     @if ($lead->editableBy(auth()->user()))
-                                        <a href="{{ Route::has('leads.edit') ? route('leads.edit', $lead) : '#' }}"
+                                        <a href="{{ Route::has('admin.leads.edit') ? route('admin.leads.edit', $lead) : '#' }}"
                                            class="p-2 text-secondary hover:text-primary-container transition-colors rounded-full hover:bg-primary-container/10">
                                             <span class="material-symbols-outlined text-[20px]">edit</span>
                                         </a>
                                     @endif
 
-                                    @if ($lead->assignableBy(auth()->user()))
-                                        <a href="{{ Route::has('leads.assign') ? route('leads.assign', $lead) : '#' }}"
-                                           class="p-2 text-secondary hover:text-primary-container transition-colors rounded-full hover:bg-primary-container/10">
-                                            <span class="material-symbols-outlined text-[20px]">person_add</span>
-                                        </a>
-                                    @endif
-
                                     @if ($lead->deletableBy(auth()->user()))
-                                        <form action="{{ Route::has('leads.destroy') ? route('leads.destroy', $lead) : '#' }}"
+                                        <form action="{{ Route::has('admin.leads.destroy') ? route('admin.leads.destroy', $lead) : '#' }}"
                                               method="POST" onsubmit="return confirm('Delete this lead? This cannot be undone.');">
                                             @csrf
                                             @method('DELETE')
@@ -188,4 +193,141 @@
         @endif
     </div>
 
+    <!-- ============================= -->
+    <!-- Assign User Modal             -->
+    <!-- ============================= -->
+    <div id="assign-modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/40 p-4">
+        <div class="bg-surface-container-lowest rounded-xl border border-outline-variant w-full max-w-sm p-lg flex flex-col gap-md">
+            <div class="flex items-center justify-between">
+                <h3 class="font-headline-lg text-headline-lg text-on-surface" style="font-size: 18px;">Assign Lead</h3>
+                <button type="button" onclick="closeAssignModal()" class="p-1 text-secondary hover:text-error rounded-full hover:bg-error/10">
+                    <span class="material-symbols-outlined text-[20px]">close</span>
+                </button>
+            </div>
+
+            <p class="font-body-md text-body-md text-secondary" style="font-size: 14px;">
+                Assign <span id="assign-modal-lead-name" class="font-semibold text-on-surface"></span> to:
+            </p>
+
+           <form id="assign-form" class="flex flex-col gap-md" data-url-template="{{ route('admin.admin.leads.assign.store', ['lead' => '__LEAD_ID__']) }}">
+                @csrf
+                <select id="assign-user-select" name="assigned_to" required
+                        class="w-full px-4 py-2.5 border border-outline-variant rounded-lg font-body-md text-body-md bg-surface-bright outline-none transition-colors
+                               focus:border-primary-container focus:ring-1 focus:ring-primary-container">
+                    <option value="" disabled selected>Select a user</option>
+                    @foreach ($assignableUsers ?? [] as $u)
+                        <option value="{{ $u->id }}">{{ $u->name }} ({{ $u->role }})</option>
+                    @endforeach
+                </select>
+
+                <span id="assign-error" class="text-xs text-error hidden"></span>
+
+                <div class="flex justify-end gap-2 pt-2">
+                    <button type="button" onclick="closeAssignModal()"
+                            class="px-4 py-2 rounded-lg font-label-sm text-label-sm text-secondary hover:bg-surface-variant transition-colors">
+                        Cancel
+                    </button>
+                    <button type="submit" id="assign-submit-btn"
+                            class="bg-primary-container text-on-primary-container px-5 py-2 rounded-lg font-label-sm text-label-sm font-semibold hover:bg-[#e0650c] transition-colors">
+                        Assign
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 @endsection
+
+@push('scripts')
+<script>
+    let currentAssignLeadId = null;
+
+    function openAssignModal(leadId, leadName, currentAssignedTo) {
+        currentAssignLeadId = leadId;
+        document.getElementById('assign-modal-lead-name').textContent = leadName;
+        document.getElementById('assign-user-select').value = currentAssignedTo ?? '';
+        document.getElementById('assign-error').classList.add('hidden');
+        document.getElementById('assign-modal').classList.remove('hidden');
+        document.getElementById('assign-modal').classList.add('flex');
+    }
+
+    function closeAssignModal() {
+        document.getElementById('assign-modal').classList.add('hidden');
+        document.getElementById('assign-modal').classList.remove('flex');
+        currentAssignLeadId = null;
+    }
+
+    document.getElementById('assign-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+
+        const select = document.getElementById('assign-user-select');
+        const errorEl = document.getElementById('assign-error');
+        const submitBtn = document.getElementById('assign-submit-btn');
+
+        if (!select.value) {
+            errorEl.textContent = 'Please select a user.';
+            errorEl.classList.remove('hidden');
+            return;
+        }
+
+        submitBtn.disabled = true;
+        submitBtn.textContent = 'Assigning...';
+
+        // Build the assign URL for this specific lead.
+       const url = document.getElementById('assign-form').dataset.urlTemplate.replace('__LEAD_ID__', currentAssignLeadId);
+
+       fetch(url, {
+    method: 'POST',   // ছিল 'PATCH' — route POST হিসেবে রেজিস্টার করা, তাই মিলিয়ে দিলাম
+    headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content
+            ?? document.querySelector('input[name="_token"]').value,
+    },
+    body: JSON.stringify({ assigned_to: select.value }),
+})
+            .then(async (response) => {
+                const data = await response.json();
+                if (!response.ok) {
+                    throw new Error(data.message || 'Something went wrong.');
+                }
+                return data;
+            })
+            .then((data) => {
+                // Update the row in place — no page reload.
+                const row = document.querySelector(`tr[data-lead-row="${data.lead_id}"]`);
+                if (row) {
+                    row.querySelector('[data-assigned-name]').textContent = data.assignee_name;
+                    row.querySelector('[data-assigned-name]').style.display = '';
+                    row.querySelector('[data-unassigned-label]').style.display = 'none';
+                    row.querySelector('[data-assign-icon]').textContent = 'sync_alt';
+                }
+
+                showFlashMessage(data.message);
+                closeAssignModal();
+            })
+            .catch((err) => {
+                errorEl.textContent = err.message;
+                errorEl.classList.remove('hidden');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Assign';
+            });
+    });
+
+    function showFlashMessage(message) {
+        const container = document.getElementById('flash-message-container');
+        container.innerHTML = `
+            <div class="bg-[#dcfce7] text-[#166534] px-4 py-3 rounded-lg font-label-sm text-label-sm">
+                ${message}
+            </div>`;
+        setTimeout(() => { container.innerHTML = ''; }, 4000);
+    }
+
+    // Close modal when clicking the dark backdrop
+    document.getElementById('assign-modal').addEventListener('click', function (e) {
+        if (e.target === this) closeAssignModal();
+    });
+</script>
+@endpush
