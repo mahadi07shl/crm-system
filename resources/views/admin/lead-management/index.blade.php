@@ -18,7 +18,7 @@
                     Bulk Upload
                 </a>
             @endcan
-            <a href="{{ Route::has('leads.create') ? route('leads.create') : '#' }}"
+            <a href="{{ Route::has('admin.leads.create') ? route('admin.leads.create') : '#' }}"
                class="bg-primary-container hover:bg-[#e0650c] text-on-primary-container px-6 py-3 rounded-lg font-label-sm text-label-sm font-semibold flex items-center gap-2 transition-colors active:scale-95">
                 <span class="material-symbols-outlined" style="font-size: 18px;">add</span>
                 Add Lead
