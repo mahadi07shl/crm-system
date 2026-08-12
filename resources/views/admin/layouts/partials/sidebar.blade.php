@@ -143,7 +143,7 @@
         </div>
 
         <!-- Categories -->
-        <a href="{{ \Route::has('categories.index') ? route('categories.index') : '#' }}"
+        <a href="{{ \Route::has('admin.categories.index') ? route('admin.categories.index') : '#' }}"
            class="flex items-center gap-3 px-4 py-3 rounded-r-full active:scale-95 duration-150 transition-colors
                   {{ request()->routeIs('categories.*')
                         ? 'text-primary border-l-4 border-primary bg-primary-container/10'
